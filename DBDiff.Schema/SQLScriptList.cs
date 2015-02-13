@@ -55,33 +55,6 @@ namespace DBDiff.Schema
             get { return list[index]; }
         }
 
-        /*private string ToSqlDown(SQLScript item)
-        {
-            string sql = "";
-            for (int i = 0; i < item.Childs.Count; i++)
-            {
-                for (int k = 0; k < item.Childs[i].Childs.Count; k++)
-                {
-                    for (int h = 0; h < item.Childs[i].Childs[k].Childs.Count; h++)
-                    {
-                        for (int l = 0; l < item.Childs[i].Childs[k].Childs[h].Childs.Count; l++)
-                        {
-                            for (int m = 0; m < item.Childs[i].Childs[k].Childs[h].Childs[l].Childs.Count; m++)
-                            {
-                                sql += item.Childs[i].Childs[k].Childs[h].Childs[l].Childs[m].SQL;
-                            }
-                            sql += item.Childs[i].Childs[k].Childs[h].Childs[l].SQL;
-                        }
-                        sql += item.Childs[i].Childs[k].Childs[h].SQL;
-                    }
-                    sql += item.Childs[i].Childs[k].SQL;
-                }
-                sql += item.Childs[i].SQL;
-            }
-            sql += item.SQL;
-            return sql;
-        }*/
-
         public string ToSQL()
         {
             StringBuilder sql = new StringBuilder();
@@ -90,15 +63,13 @@ namespace DBDiff.Schema
             {                
                 for (int j = 0; j < list.Count; j++)
                 {
-                    //if ((list[j].IsDropAction) || (!list[j].IsAddAction))
-                        sql.Append(list[j].SQL); //ToSqlDown(list[j]);
+                    if (!String.IsNullOrEmpty(list[j].dbObject))
+                        sql.Append(String.Format("Print '{0}'\r\nGO\r\n", list[j].Status + " " + list[j].dbObject));
+                    sql.Append(list[j].SQL); //ToSqlDown(list[j]);
+                    if (list[j].Status > Enums.ScripActionType.BeginTransaction && list[j].Status < Enums.ScripActionType.EndTransaction)
+                        sql.Append("IF @@ERROR<>0 OR @@TRANCOUNT=0 BEGIN IF @@TRANCOUNT>0 ROLLBACK SET NOEXEC ON END\r\nGO\r\n\r\n");
                 }
-                /*for (int j = list.Count-1; j >= 0; j--)
-                {
-                    if (list[j].IsAddAction)
-                        sql.Append(list[j].SQL);
-                }*/
-
+                
             }
             return sql.ToString();
         }

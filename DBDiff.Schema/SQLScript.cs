@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 
 namespace DBDiff.Schema
 {
@@ -23,14 +24,13 @@ namespace DBDiff.Schema
             sql = sqlScript;
             dependencies = dependenciesCount;
             status = action;
-            //childs = new SQLScriptList();
+            if (status > Enums.ScripActionType.BeginTransaction && status < Enums.ScripActionType.EndTransaction)
+            {
+                Match res = Regex.Match(sql, "\\[dbo\\]\\.\\[(.*)\\]", RegexOptions.ExplicitCapture);
+                if (res != null)
+                    dbObject = res.Value.Replace("[dbo].[","").Replace("]","");
+            }
         }
-
-        /*public SQLScriptList Childs
-        {
-            get { return childs; }
-            set { childs = value; }
-        }*/
 
         public int Deep
         {
@@ -55,6 +55,8 @@ namespace DBDiff.Schema
             get { return sql; }
             set { sql = value; }
         }
+
+        public string dbObject;
 
         public bool IsDropAction
         {

@@ -239,11 +239,26 @@ namespace DBDiff.Schema.SQLServer.Generates.Model
                 Info != null ? Info.Database : "Uknown",
                 Info != null ? Info.Server : "Uknown",
                 0), 0, Enums.ScripActionType.None));
+            listDiff.Add(new SQLScript(String.Format(@"
+SET NOEXEC OFF
+SET ANSI_WARNINGS ON
+SET XACT_ABORT ON
+SET IMPLICIT_TRANSACTIONS OFF
+SET ARITHABORT ON
+SET NOCOUNT ON
+SET QUOTED_IDENTIFIER ON
+SET NUMERIC_ROUNDABORT OFF
+SET CONCAT_NULL_YIELDS_NULL ON
+SET ANSI_NULLS ON
+SET ANSI_PADDING ON
+GO
+"), 0, Enums.ScripActionType.PreSets));
             if (!isAzure10)
             {
                 listDiff.Add("USE [" + Name + "]\r\nGO\r\n\r\n", 0, Enums.ScripActionType.UseDatabase);
                 listDiff.AddRange(Assemblies.ToSqlDiff(schemas));
                 listDiff.AddRange(UserTypes.ToSqlDiff(schemas));
+                listDiff.Add("BEGIN TRAN\r\nGO\r\n\r\n", 0, Enums.ScripActionType.BeginTransaction);
             }
 			listDiff.AddRange(TablesTypes.ToSqlDiff(schemas));
 			listDiff.AddRange(Tables.ToSqlDiff(schemas));
@@ -268,7 +283,9 @@ namespace DBDiff.Schema.SQLServer.Generates.Model
             if (!isAzure10)
             {
                 listDiff.AddRange(FullText.ToSqlDiff(schemas));
+                listDiff.Add("IF @@TRANCOUNT>0\r\n\tCOMMIT\r\nGO\r\n\r\n", 0, Enums.ScripActionType.EndTransaction);
             }
+            listDiff.Add("SET NOEXEC OFF\r\n", 0, Enums.ScripActionType.PostSets);
             return listDiff;
         }
 
