@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using DBDiff.Schema.Attributes;
 using DBDiff.Schema.Model;
+using System.Text;
+using System.Linq;
 
 namespace DBDiff.Schema.SQLServer.Generates.Model
 {
@@ -436,6 +438,7 @@ namespace DBDiff.Schema.SQLServer.Generates.Model
             {
                 listColumns = listColumns.Substring(0, listColumns.Length - 1);
                 listValues = listValues.Substring(0, listValues.Length - 1);
+                sql += ToSQLDropConstraints(Name) + "\r\n";
                 sql += ToSQLTemp(tempTable) + "\r\n";
                 if ((HasIdentityColumn) && (!IsIdentityNew))
                     sql += "SET IDENTITY_INSERT [" + Owner + "].[" + tempTable + "] ON\r\n";
@@ -473,6 +476,18 @@ namespace DBDiff.Schema.SQLServer.Generates.Model
             listDiff.Add(ToSQLTableRebuild(), dependenciesCount, Enums.ScripActionType.RebuildTable);
             listDiff.AddRange(ToSQLCreateDependencis());
             return listDiff;
+        }
+
+        private string ToSQLDropConstraints(string TableName)
+        {
+            StringBuilder sql = new StringBuilder();
+            sql.Append("ALTER TABLE [" + Owner + "].[" + TableName + "]\r\n");
+            sql.Append("DROP CONSTRAINT ");
+            sql.Append(String.Join(",\r\n\t\t\t\t", Columns.Where(x => x.DefaultConstraint != null).Select(x => "[" + x.DefaultConstraint.Name + "]").ToArray()));
+            sql.AppendLine();
+            sql.AppendLine("GO");
+
+            return sql.ToString();
         }
 
         private string ToSQLTemp(String TableName)
